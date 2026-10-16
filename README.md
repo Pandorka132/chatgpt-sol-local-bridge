@@ -1,12 +1,4 @@
-# chatgpt-sol-local-bridge  Community Archive
-
-This repository is a community-maintained archive of the original mingrath/chatgpt-sol-local-bridge project.
-
-The original repository is currently unavailable at its former GitHub URL. This archive preserves the project for existing users and anyone interested in continuing its development.
-
-This is an independent community archive and is not affiliated with or endorsed by the original author or OpenAI.
-
-The original MIT license and copyright notice are retained.
+# Chatgpt Sol Local Bridge: Community Archive
 
 A production-grade, cross-platform implementation of the original **ChatGPT Web → OpenAI Secure MCP Tunnel → local workstation** workflow.
 
@@ -18,6 +10,14 @@ The local MCP endpoint binds to loopback by default. Tunnel connectivity is init
 > This bridge gives an AI agent the authority of the local user running it. The no-delete layer is a strong policy seatbelt with exact, expiring approval tokens; it is **not an OS sandbox**. For sensitive work, use a dedicated OS account, VM/container, filesystem snapshots, limited workspace roots, and—when available—an independent external approval verifier.
 
 ---
+# Credits
+This repository is an archive of the original mingrath/chatgpt-sol-local-bridge project.
+
+The original repository is currently unavailable at its former GitHub URL. This archive preserves the project for existing users and anyone interested in continuing its development.
+
+This is an independent community archive and is not affiliated with or endorsed by the original author or OpenAI.
+
+The original MIT license and copyright notice are retained.
 
 ## Why this exists
 
@@ -129,7 +129,7 @@ Windows users should install the current `tunnel-client` release from [openai/tu
 ### 2. Install
 
 ```bash
-git clone https://github.com/mingrath/chatgpt-sol-local-bridge.git
+git clone https://github.com/Pandorka132/chatgpt-sol-local-bridge.git
 cd chatgpt-sol-local-bridge
 npm ci
 cp .env.example .env
