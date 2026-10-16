@@ -1,4 +1,12 @@
-# chatgpt-sol-local-bridge
+# chatgpt-sol-local-bridge  Community Archive
+
+This repository is a community-maintained archive of the original mingrath/chatgpt-sol-local-bridge project.
+
+The original repository is currently unavailable at its former GitHub URL. This archive preserves the project for existing users and anyone interested in continuing its development.
+
+This is an independent community archive and is not affiliated with or endorsed by the original author or OpenAI.
+
+The original MIT license and copyright notice are retained.
 
 A production-grade, cross-platform implementation of the original **ChatGPT Web → OpenAI Secure MCP Tunnel → local workstation** workflow.
 
