@@ -1,4 +1,5 @@
 # Chatgpt Sol Local Bridge: Community Archive
+[![M8ven Verified](https://m8ven.ai/badge/mcp/pandorka132-chatgpt-sol-local-bridge-1b2wqo?variant=verified&v=ebeafb09d42a4bbda45892e6fb8460ff)](https://m8ven.ai/mcp/pandorka132-chatgpt-sol-local-bridge-1b2wqo?s=readme)
 
 A production-grade, cross-platform implementation of the original **ChatGPT Web → OpenAI Secure MCP Tunnel → local workstation** workflow.
 
