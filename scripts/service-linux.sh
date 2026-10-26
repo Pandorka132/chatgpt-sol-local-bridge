@@ -28,7 +28,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=$(systemd_quote "$REPO")
+WorkingDirectory=$REPO
 ExecStart=$exec_line
 Restart=always
 RestartSec=10
