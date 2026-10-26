@@ -1,7 +1,6 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 import { z } from "zod";
 import { commandExists, runCommand } from "../lib/exec.js";
 import { denyDeleteMessage, queueDestructive } from "../lib/policy.js";
@@ -24,7 +23,7 @@ export function registerFiles(server) {
 
   server.registerTool("search_text", {
     title: "Search text",
-    description: "Regex search with ripgrep across a workspace. If ripgrep is unavailable, uses a bounded literal-text fallback (never an untrusted JavaScript regex).",
+    description: "Read-only regex search across a workspace. Invokes the fixed `rg` executable with search-only arguments when available; if unavailable, uses a bounded literal-text fallback (never an untrusted JavaScript regex). Does not write or delete workspace files.",
     inputSchema: {
       pattern: z.string(),
       path: z.string().optional(),
@@ -36,7 +35,7 @@ export function registerFiles(server) {
     try {
       const root = assertInWorkspace(input ? resolveUserPath(input) : currentWorkspace() || process.cwd());
       const limit = maxMatches ?? 40;
-      return json(commandExists("rg") ? searchWithRipgrep({ root, pattern, glob, limit }) : searchWithJavaScript({ root, pattern, glob, limit }));
+      return json(commandExists("rg") ? await searchWithRipgrep({ root, pattern, glob, limit }) : searchWithJavaScript({ root, pattern, glob, limit }));
     } catch (error) {
       return fail(error.message);
     }
@@ -138,11 +137,11 @@ export function patchDeletesFile(diff) {
     || /^\+\+\+\s+NUL\b/im.test(diff);
 }
 
-function searchWithRipgrep({ root, pattern, glob, limit }) {
+async function searchWithRipgrep({ root, pattern, glob, limit }) {
   const args = ["--json", "--max-count", String(limit), "--max-filesize", "1M", "--hidden", "--glob", "!.git/**", "--glob", "!node_modules/**"];
   if (glob) args.push("--glob", glob);
   args.push(pattern, root);
-  const result = spawnSync("rg", args, { encoding: "utf8", maxBuffer: 8 * 1024 * 1024 });
+  const result = await runCommand(["rg", ...args], { cwd: root, shell: false, timeoutMs: 30_000, maxStdout: 8 * 1024 * 1024, maxStderr: 16_000 });
   const hits = String(result.stdout || "").split("\n").filter(Boolean).flatMap((line) => {
     try {
       const row = JSON.parse(line);
@@ -150,7 +149,7 @@ function searchWithRipgrep({ root, pattern, glob, limit }) {
       return [{ path: row.data.path?.text, line: row.data.line_number, text: row.data.lines?.text?.trim() }];
     } catch { return []; }
   }).slice(0, limit);
-  return { backend: "ripgrep", root, count: hits.length, hits, stderr: result.status > 1 ? result.stderr : undefined };
+  return { backend: "ripgrep", root, count: hits.length, hits, stderr: result.code > 1 || result.timedOut ? result.stderr : undefined };
 }
 
 function searchWithJavaScript({ root, pattern, glob, limit }) {

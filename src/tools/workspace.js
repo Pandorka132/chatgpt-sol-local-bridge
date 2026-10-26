@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 import { z } from "zod";
+import { runCommand } from "../lib/exec.js";
 import { ALLOW_TOOL_ROOT_REGISTRATION, loadState, saveState, workspaceRoots } from "../lib/config.js";
 import { assertAllowed, assertInRegisteredRoots, canonicalPath, currentWorkspace, resolveUserPath, walkTree } from "../lib/paths.js";
 import { fail, json, ok } from "../lib/text.js";
@@ -74,7 +74,7 @@ export function registerWorkspace(server) {
 
   server.registerTool("workspace_snapshot", {
     title: "Workspace snapshot",
-    description: "High-level snapshot: current workspace, git HEAD/status, package metadata, and top-level files.",
+    description: "Read-only high-level snapshot of the current workspace, Git HEAD/branch/status, package metadata, and top-level files. Uses only read-only Git queries; does not modify the repository or workspace.",
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
   }, async () => {
     try {
@@ -87,7 +87,7 @@ export function registerWorkspace(server) {
         const parsed = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
         pkg = { name: parsed.name || null, version: parsed.version || null, scripts: Object.keys(parsed.scripts || {}) };
       }
-      const git = gitSnapshot(root);
+      const git = await gitSnapshot(root);
       return json({ path: root, top, package: pkg, git });
     } catch (error) {
       return fail(error.message);
@@ -95,15 +95,17 @@ export function registerWorkspace(server) {
   });
 }
 
-function gitSnapshot(root) {
+async function gitSnapshot(root) {
   if (!fs.existsSync(path.join(root, ".git"))) return { repository: false };
-  const head = spawnSync("git", ["rev-parse", "--short", "HEAD"], { cwd: root, encoding: "utf8" });
-  const branch = spawnSync("git", ["branch", "--show-current"], { cwd: root, encoding: "utf8" });
-  const status = spawnSync("git", ["status", "--short"], { cwd: root, encoding: "utf8", maxBuffer: 1_000_000 });
+  const [head, branch, status] = await Promise.all([
+    runCommand(["git", "rev-parse", "--short", "HEAD"], { cwd: root, shell: false, timeoutMs: 10_000, maxStdout: 16_000, maxStderr: 16_000 }),
+    runCommand(["git", "branch", "--show-current"], { cwd: root, shell: false, timeoutMs: 10_000, maxStdout: 16_000, maxStderr: 16_000 }),
+    runCommand(["git", "status", "--short"], { cwd: root, shell: false, timeoutMs: 10_000, maxStdout: 1_000_000, maxStderr: 16_000 }),
+  ]);
   return {
     repository: true,
-    head: head.status === 0 ? head.stdout.trim() : null,
-    branch: branch.status === 0 ? branch.stdout.trim() : null,
+    head: head.ok ? head.stdout.trim() : null,
+    branch: branch.ok ? branch.stdout.trim() : null,
     dirty: Boolean(status.stdout.trim()),
     status: status.stdout.split(/\r?\n/).filter(Boolean).slice(0, 100),
   };
